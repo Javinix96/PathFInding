@@ -29,7 +29,7 @@ public class GenGrid : MonoBehaviour
         world.InitGrid(size, pos, posI, posF);
         grid = world.Grid;
         nodes = ArrayToList<Node>(grid);
-        world.GeneratePath();
+        StartCoroutine(world.GeneratePath());
     }
 
     private List<T> ArrayToList<T>(T[,] arr)

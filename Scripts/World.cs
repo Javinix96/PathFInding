@@ -43,7 +43,7 @@ public class World
         posBlocked.ForEach(pos => grid[pos.X, pos.Y].Busy = 1);
     }
 
-    public void GeneratePath()
+    public IEnumerator GeneratePath()
     {
         int sizeW = grid.GetUpperBound(0);
         int sizeH = grid.GetUpperBound(1);
@@ -126,26 +126,37 @@ public class World
             }
 
 
-            Pos minorPos2 = GetMinor(openList);
+            if (openList.Count <= 0)
+            {
+                found = true;
+                Debug.Log("No hay path camino bloqueado");
+                break;
+            }
+
+            Pos minorPos2 = GetMinor2(openList);
             Node minor = grid[minorPos2.X, minorPos2.Y];
             closedList.Add(minor);
             openList.Remove(minor);
             actual = minorPos2;
+            yield return new WaitForSeconds(0.02f);
         }
 
-        closedList.Reverse();
-        path.Add(closedList[0]);
-        Node e = closedList[0].Parent;
-
-        while (e.Parent != null)
+        if (openList.Count > 0)
         {
-            path.Add(e);
-            e = e.Parent;
+            closedList.Reverse();
+            path.Add(closedList[0]);
+            Node e = closedList[0].Parent;
+
+            while (e.Parent != null)
+            {
+                path.Add(e);
+                e = e.Parent;
+            }
+
+            path.Add(grid[PosI.X, PosI.Y]);
+
+            Debug.Log(GetDistance(PosI, PosF));
         }
-
-        path.Add(grid[PosI.X, PosI.Y]);
-
-        Debug.Log(GetDistance(PosI, PosF));
     }
 
     private bool AllCalculated(List<Node> open, Node newN)
@@ -255,6 +266,24 @@ public class World
     }
 
     private Pos GetMinor(List<Node> open)
+    {
+        int min = int.MaxValue;
+        Pos n = new Pos(open[0].PosA.X, open[0].PosA.Y);
+
+        for (int i = 0; i < open.Count; i++)
+        {
+            if (min < open[i].F)
+            {
+                min = open[i].F;
+                n = open[i].PosA;
+            }
+
+        }
+
+        return n;
+    }
+
+    private Pos GetMinor2(List<Node> open)
     {
         var s = open.OrderBy(d => d.F).ToList();
         return s[0].PosA;
