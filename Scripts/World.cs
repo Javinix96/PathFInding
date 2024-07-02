@@ -2,62 +2,59 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using UnityEngine;
-using static UnityEditor.PlayerSettings;
 
 public class World
 {
     private Node[,] grid;
 
-    public Node[,] Grid { get => grid; }
+    private Node[,] Grid { get => grid; }
 
-    public List<Node> openList;
-    public List<Node> closedList;
+    private List<Node> openList;
+    private List<Node> closedList;
 
-    public List<Node> path;
+    private List<Node> path;
 
+    private Vector2Int actual;
+    private Vector2Int PosI;
+    private Vector2Int PosF;
 
-    private Pos actual;
-    private Pos PosI;
-    private Pos PosF;
+    private int sizeW = 0;
+    private int sizeH = 0;
+    private bool found = false;
 
-    public void InitGrid(int size, List<Pos> posBlocked, Pos posI, Pos posF)
+    public void InitGrid(Vector2Int posI, Vector2Int posF, Node[,] gridP)
     {
         path = new List<Node>();
         openList = new List<Node>();
         closedList = new List<Node>();
-        grid = new Node[size, size];
         PosI = posI;
         PosF = posF;
-        int id = 0;
-        for (int i = 0; i < size; i++)
-        {
-            for (int e = 0; e < size; e++)
-            {
-                Pos p = new Pos(i, e);
-                grid[i, e] = new Node(id, 0, 0, 0, new Vector3(i, 0, e), null, 0, p);
-                id++;
-            }
-        }
-        posBlocked.ForEach(pos => grid[pos.X, pos.Y].Busy = 1);
+        grid = gridP;
+        sizeW = grid.GetUpperBound(0);
+        sizeH = grid.GetUpperBound(1);
+        closedList.Add(grid[PosI.x, PosI.y]);
+        found = false;
+        actual = PosI;
     }
 
-    public IEnumerator GeneratePath()
+    public IEnumerator GeneratePath(Vector2Int posI, Vector2Int posF, Node[,] gridP, Action<List<Node>, List<Node>, List<Node>> callback)
     {
-        int sizeW = grid.GetUpperBound(0);
-        int sizeH = grid.GetUpperBound(1);
 
-        closedList.Add(grid[PosI.X, PosI.Y]);
-        actual = PosI;
-        bool found = false;
+        InitGrid(posI, posF, gridP);
+
         while (!found)
         {
             for (int x = -1; x <= 1; x++)
             {
                 for (int y = -1; y <= 1; y++)
                 {
-                    Vector2Int pos = new Vector2Int(actual.X + x, actual.Y + y);
+
+                    if (actual.x == 9 && actual.y == 5)
+                    {
+                        Debug.Log("prueba");
+                    }
+                    Vector2Int pos = new Vector2Int(actual.x + x, actual.y + y);
 
                     if (pos.x < 0 || pos.y < 0)
                         continue;
@@ -68,63 +65,38 @@ public class World
                     if (grid[pos.x, pos.y].Busy == 1)
                         continue;
 
+                    if (x == 0 && y == 0)
+                        continue;
+
                     Node newNode = grid[pos.x, pos.y];
 
                     if (closedList.Contains(newNode))
                         continue;
+
                     if (openList.Contains(newNode))
                     {
-                        // int sum = 0;
-                        // if (Math.Abs(x) == 1 && Math.Abs(y) == 1)
-                        // {
-                        //     sum = grid[actual.X, actual.Y].G + 14;
-                        //     if (sum < grid[pos.x, pos.y].G)
-                        //     {
-                        //         openList.Where(o => o.ID == grid[pos.x, pos.y].ID).ToList().ForEach(e => e.Parent = grid[newNode.PosA.X, newNode.PosA.Y]);
-                        //     }
-                        // }
-                        // else
-                        // {
-                        //     int G = grid[pos.x, pos.y].G;
-                        //     sum = grid[actual.X, actual.Y].G + 10;
-                        //     if (sum < G)
-                        //     {
-                        //         openList.Where(o => o.ID == grid[pos.x, pos.y].ID).ToList().ForEach(e => e.Parent = grid[newNode.PosA.X, newNode.PosA.Y]);
-                        //     }
-                        // }
-                        if (AllCalculated(openList, grid[actual.X, actual.Y]))
+                        if (AllCalculated(openList, grid[actual.x, actual.y]))
                         {
-                            actual = GetLow(grid[actual.X, actual.Y]).PosA;
-                            closedList.Add(GetLow(grid[actual.X, actual.Y]));
-                            openList.Remove(GetLow(grid[actual.X, actual.Y]));
+                            actual = GetLow(grid[actual.x, actual.y]).PosA;
+                            closedList.Add(GetLow(grid[actual.x, actual.y]));
+                            openList.Remove(GetLow(grid[actual.x, actual.y]));
                         }
                         continue;
                     }
 
-
-                    Pos posAct = new Pos(pos.x, pos.y);
-
-                    newNode.H = GetDistance(newNode.PosA, PosF) * 10;
-
-                    if (Math.Abs(x) == 1 && Math.Abs(y) == 1)
-                        newNode.G = grid[actual.X, actual.Y].G + 14;
-                    else
-                        newNode.G = grid[actual.X, actual.Y].G + 10;
-
-                    newNode.F = newNode.G + newNode.H;
-                    newNode.Parent = grid[actual.X, actual.Y];
+                    newNode = CalculateNode(x, y, newNode);
 
                     openList.Add(newNode);
 
-                    if (openList.Contains(grid[PosF.X, PosF.Y]))
+                    if (openList.Contains(grid[PosF.x, PosF.y]))
                     {
-                        closedList.Add(grid[PosF.X, PosF.Y]);
+                        closedList.Add(grid[PosF.x, PosF.y]);
                         found = true;
                         break;
                     }
+                    callback(path, openList, closedList);
                 }
             }
-
 
             if (openList.Count <= 0)
             {
@@ -133,12 +105,25 @@ public class World
                 break;
             }
 
-            Pos minorPos2 = GetMinor2(openList);
-            Node minor = grid[minorPos2.X, minorPos2.Y];
-            closedList.Add(minor);
-            openList.Remove(minor);
-            actual = minorPos2;
-            yield return new WaitForSeconds(0.02f);
+            if (AllCalculated(openList, grid[actual.x, actual.y]))
+            {
+                actual = GetLow(grid[actual.x, actual.y]).PosA;
+                closedList.Add(GetLow(grid[actual.x, actual.y]));
+                openList.Remove(GetLow(grid[actual.x, actual.y]));
+            }
+            else
+            {
+
+                Vector2Int minorPos2 = GetMinor2(openList);
+                Node minor = grid[minorPos2.x, minorPos2.y];
+                closedList.Add(minor);
+                openList.Remove(minor);
+                actual = minorPos2;
+            }
+
+
+            yield return new WaitForSeconds(0.05f);
+            callback(path, openList, closedList);
         }
 
         if (openList.Count > 0)
@@ -153,23 +138,41 @@ public class World
                 e = e.Parent;
             }
 
-            path.Add(grid[PosI.X, PosI.Y]);
+            path.Add(grid[PosI.x, PosI.y]);
 
-            Debug.Log(GetDistance(PosI, PosF));
+            callback(path, openList, closedList);
         }
     }
+
+
+    private Node CalculateNode(int x, int y, Node newNode)
+    {
+        Node node = newNode;
+
+        newNode.H = GetDistance(newNode.PosA, PosF) * 10;
+
+        if (Math.Abs(x) == 1 && Math.Abs(y) == 1)
+            newNode.G = grid[actual.x, actual.y].G + 14;
+        else
+            newNode.G = grid[actual.x, actual.y].G + 10;
+
+        newNode.F = newNode.G + newNode.H;
+        newNode.Parent = grid[actual.x, actual.y];
+
+
+        return node;
+    }
+
 
     private bool AllCalculated(List<Node> open, Node newN)
     {
         bool ans = true;
-        int sizeW = grid.GetUpperBound(0);
-        int sizeH = grid.GetUpperBound(1);
 
         for (int x = -1; x <= 1; x++)
         {
             for (int y = -1; y <= 1; y++)
             {
-                Vector2Int pos = new Vector2Int(newN.PosA.X + x, newN.PosA.Y + y);
+                Vector2Int pos = new Vector2Int(newN.PosA.x + x, newN.PosA.y + y);
 
                 if (pos.x < 0 || pos.y < 0)
                     continue;
@@ -199,13 +202,12 @@ public class World
 
     private Node GetLow(Node act)
     {
-        int sizeW = grid.GetUpperBound(0);
-        int sizeH = grid.GetUpperBound(1);
+        List<Node> nei = new List<Node>();
         for (int x = -1; x <= 1; x++)
         {
             for (int y = -1; y <= 1; y++)
             {
-                Vector2Int pos = new Vector2Int(act.PosA.X + x, act.PosA.Y + y);
+                Vector2Int pos = new Vector2Int(act.PosA.x + x, act.PosA.y + y);
 
                 if (pos.x < 0 || pos.y < 0)
                     continue;
@@ -227,29 +229,29 @@ public class World
                 int sum = 0;
                 if (Math.Abs(x) == 1 && Math.Abs(y) == 1)
                 {
-                    sum = grid[act.PosA.X, act.PosA.Y].G + 14;
+                    sum = grid[act.PosA.x, act.PosA.y].G + 14;
                     if (sum < grid[pos.x, pos.y].G)
                     {
 
                         openList.Where(o => o.ID == grid[pos.x, pos.y].ID).ToList().ForEach(e =>
                         {
-                            e.Parent = grid[act.PosA.X, act.PosA.Y];
+                            e.Parent = grid[act.PosA.y, act.PosA.y];
                             e.G = sum;
-                            e.H = GetDistance(new Pos(pos.x, pos.y), PosF) * 10;
+                            e.H = GetDistance(pos, PosF) * 10;
                             e.F = e.G + e.H;
                         });
                     }
                 }
                 else
                 {
-                    sum = grid[act.PosA.X, act.PosA.Y].G + 10;
+                    sum = grid[act.PosA.x, act.PosA.y].G + 10;
                     if (sum < grid[pos.x, pos.y].G)
                     {
                         openList.Where(o => o.ID == grid[pos.x, pos.y].ID).ToList().ForEach(e =>
                         {
-                            e.Parent = grid[act.PosA.X, act.PosA.Y];
+                            e.Parent = grid[act.PosA.x, act.PosA.y];
                             e.G = sum;
-                            e.H = GetDistance(new Pos(pos.x, pos.y), PosF) * 10;
+                            e.H = GetDistance(pos, PosF) * 10;
                             e.F = e.G + e.H;
                         });
                     }
@@ -257,18 +259,18 @@ public class World
             }
         }
 
-        return grid[GetMinor(openList).X, GetMinor(openList).Y];
+        return grid[GetMinor2(openList).x, GetMinor2(openList).y];
     }
 
-    private int GetDistance(Pos a, Pos b)
+    private int GetDistance(Vector2Int a, Vector2Int b)
     {
-        return Math.Abs((b.X - a.X)) + Math.Abs((b.Y - a.Y));
+        return Math.Abs((b.x - a.x)) + Math.Abs((b.y - a.y));
     }
 
-    private Pos GetMinor(List<Node> open)
+    private Vector2Int GetMinor(List<Node> open)
     {
         int min = int.MaxValue;
-        Pos n = new Pos(open[0].PosA.X, open[0].PosA.Y);
+        Vector2Int n = new Vector2Int(open[0].PosA.x, open[0].PosA.y);
 
         for (int i = 0; i < open.Count; i++)
         {
@@ -283,23 +285,9 @@ public class World
         return n;
     }
 
-    private Pos GetMinor2(List<Node> open)
+    private Vector2Int GetMinor2(List<Node> open)
     {
         var s = open.OrderBy(d => d.F).ToList();
         return s[0].PosA;
-    }
-}
-
-[Serializable]
-public class Pos
-{
-    public int X;
-
-    public int Y;
-
-    public Pos(int x, int y)
-    {
-        X = x;
-        Y = y;
     }
 }

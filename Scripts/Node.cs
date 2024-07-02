@@ -19,9 +19,9 @@ public class Node
 
     public int Busy;
 
-    public Pos PosA;
+    public Vector2Int PosA;
 
-    public Node(int id,int f, int g, int h, Vector3 pos,Node p, int busy, Pos posA)
+    public Node(int id, int f, int g, int h, Vector3 pos, Node p, int busy, Vector2Int posA)
     {
         ID = id;
         F = f;
