@@ -20,10 +20,17 @@ public class GenGrid : MonoBehaviour
     private List<Node> openList;
     private List<Node> closedList;
 
+    [SerializeField]
+    private GameObject arrow;
+
+    [SerializeField]
+    private GameObject enemy;
+
     private List<Node> path;
 
 
     public int size;
+    EnemyIA p;
 
     // Start is called before the first frame update
     void Start()
@@ -31,8 +38,10 @@ public class GenGrid : MonoBehaviour
         world = new World();
         grid = new Node[size, size];
         StartGrid();
+        GameObject o = Instantiate(enemy, new Vector3(grid[posI.x, posI.y].Pos.x, 2.83f, grid[posI.x, posI.y].Pos.z), Quaternion.identity);
+        p = o.GetComponent<EnemyIA>();
         temp = ArrayToList(grid);
-        StartCoroutine(world.GeneratePath(posI, posF, grid, GetPath));
+        StartCoroutine(world.GeneratePath(posI, posF, grid, GetPath, GetPath));
     }
 
     private void StartGrid()
@@ -42,8 +51,8 @@ public class GenGrid : MonoBehaviour
         {
             for (int e = 0; e < size; e++)
             {
-                Vector3 pos = new Vector3(i * sizeNode, 0, e * sizeNode);
-                int busy = Physics.CheckSphere(pos, sizeNode) ? 1 : 0;
+                Vector3 pos = new Vector3(i * sizeNode, 1, e * sizeNode);
+                int busy = Physics.CheckSphere(pos, sizeNode - 0.3f) ? 1 : 0;
                 Node n = new Node(id, 0, 0, 0, pos, null, busy, new Vector2Int(i, e));
                 id++;
                 grid[i, e] = n;
@@ -51,11 +60,43 @@ public class GenGrid : MonoBehaviour
         }
     }
 
-    private void GetPath(List<Node> _path, List<Node> _open, List<Node> _closed)
+    private void GetPath(List<Node> _open, List<Node> _closed)
     {
-        path = _path;
         openList = _open;
         closedList = _closed;
+
+        // closedList.ForEach(n =>
+        // {
+        //     if (n.Parent != null)
+        //     {
+        //         GameObject arr = Instantiate(arrow, n.Pos, RotateObject(n.Pos, n.Parent.Pos));
+        //         arr.transform.SetParent(this.transform);
+        //     }
+        // });
+
+        //     openList.ForEach(n =>
+        //    {
+        //        if (n.Parent != null)
+        //        {
+        //            GameObject arr = Instantiate(arrow, n.Pos, RotateObject(n.Pos, n.Parent.Pos));
+        //            arr.transform.SetParent(this.transform);
+        //        }
+        //    });
+    }
+
+    private void GetPath(List<Node> _path)
+    {
+        p.Path = _path;
+        path = _path;
+
+    }
+
+    Quaternion RotateObject(Vector3 a, Vector3 b)
+    {
+        Vector3 dir = b - a;
+        Quaternion qua = Quaternion.LookRotation(dir);
+        qua.eulerAngles = new Vector3(0, qua.eulerAngles.y, 0);
+        return qua;
     }
 
     private List<T> ArrayToList<T>(T[,] arr)
@@ -118,7 +159,7 @@ public class GenGrid : MonoBehaviour
                 if (i == posI.x && e == posI.y)
                 {
                     Gizmos.color = Color.blue;
-                    Gizmos.DrawCube(n, new Vector3(0.8f, 0.8f, 0.8f));
+                    Gizmos.DrawCube(n, new Vector3(sizeNode, sizeNode, sizeNode));
                     continue;
                 }
 

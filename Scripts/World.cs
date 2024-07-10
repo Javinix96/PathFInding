@@ -38,7 +38,7 @@ public class World
         actual = PosI;
     }
 
-    public IEnumerator GeneratePath(Vector2Int posI, Vector2Int posF, Node[,] gridP, Action<List<Node>, List<Node>, List<Node>> callback)
+    public IEnumerator GeneratePath(Vector2Int posI, Vector2Int posF, Node[,] gridP, Action<List<Node>, List<Node>> callback, Action<List<Node>> callback2)
     {
 
         InitGrid(posI, posF, gridP);
@@ -49,11 +49,6 @@ public class World
             {
                 for (int y = -1; y <= 1; y++)
                 {
-
-                    if (actual.x == 9 && actual.y == 5)
-                    {
-                        Debug.Log("prueba");
-                    }
                     Vector2Int pos = new Vector2Int(actual.x + x, actual.y + y);
 
                     if (pos.x < 0 || pos.y < 0)
@@ -62,10 +57,9 @@ public class World
                     if (pos.x > sizeW || pos.y > sizeH)
                         continue;
 
-                    if (grid[pos.x, pos.y].Busy == 1)
-                        continue;
-
                     if (x == 0 && y == 0)
+                        continue;
+                    if (grid[pos.x, pos.y].Busy == 1)
                         continue;
 
                     Node newNode = grid[pos.x, pos.y];
@@ -75,11 +69,17 @@ public class World
 
                     if (openList.Contains(newNode))
                     {
+                        if (actual.x == 34 && actual.y == 1)
+                        {
+                            Debug.Log("llego");
+                        }
                         if (AllCalculated(openList, grid[actual.x, actual.y]))
                         {
                             actual = GetLow(grid[actual.x, actual.y]).PosA;
                             closedList.Add(GetLow(grid[actual.x, actual.y]));
                             openList.Remove(GetLow(grid[actual.x, actual.y]));
+                            x = -1;
+                            y = -1;
                         }
                         continue;
                     }
@@ -94,7 +94,8 @@ public class World
                         found = true;
                         break;
                     }
-                    callback(path, openList, closedList);
+                    // callback(openList, closedList);
+                    yield return new WaitForSeconds(0.0f);
                 }
             }
 
@@ -102,6 +103,7 @@ public class World
             {
                 found = true;
                 Debug.Log("No hay path camino bloqueado");
+                callback(openList, closedList);
                 break;
             }
 
@@ -122,8 +124,7 @@ public class World
             }
 
 
-            yield return new WaitForSeconds(0.05f);
-            callback(path, openList, closedList);
+            yield return new WaitForSeconds(0.01f);
         }
 
         if (openList.Count > 0)
@@ -140,7 +141,9 @@ public class World
 
             path.Add(grid[PosI.x, PosI.y]);
 
-            callback(path, openList, closedList);
+            callback(openList, closedList);
+            path.Reverse();
+            callback2(path);
         }
     }
 
@@ -158,7 +161,6 @@ public class World
 
         newNode.F = newNode.G + newNode.H;
         newNode.Parent = grid[actual.x, actual.y];
-
 
         return node;
     }
@@ -218,12 +220,15 @@ public class World
                 if (grid[pos.x, pos.y].Busy == 1)
                     continue;
 
-                if (grid[pos.x, pos.y].Busy == 1)
+                if (x == 0 && y == 0)
                     continue;
 
                 Node newNode = grid[pos.x, pos.y];
 
                 if (closedList.Contains(newNode))
+                    continue;
+
+                if (openList.Contains(newNode))
                     continue;
 
                 int sum = 0;
