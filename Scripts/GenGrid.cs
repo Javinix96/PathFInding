@@ -25,6 +25,8 @@ public class GenGrid : MonoBehaviour
 
     [SerializeField]
     private GameObject enemy;
+    [SerializeField]
+    private LayerMask noHit;
 
     private List<Node> path;
 
@@ -41,7 +43,7 @@ public class GenGrid : MonoBehaviour
         GameObject o = Instantiate(enemy, new Vector3(grid[posI.x, posI.y].Pos.x, 2.83f, grid[posI.x, posI.y].Pos.z), Quaternion.identity);
         p = o.GetComponent<EnemyIA>();
         temp = ArrayToList(grid);
-        StartCoroutine(world.GeneratePath(posI, posF, grid, GetPath, GetPath));
+       
     }
 
     private void StartGrid()
@@ -52,7 +54,7 @@ public class GenGrid : MonoBehaviour
             for (int e = 0; e < size; e++)
             {
                 Vector3 pos = new Vector3(i * sizeNode, 1, e * sizeNode);
-                int busy = Physics.CheckSphere(pos, sizeNode - 0.3f) ? 1 : 0;
+                int busy = Physics.CheckSphere(pos, sizeNode - 0.3f,noHit) ? 1 : 0;
                 Node n = new Node(id, 0, 0, 0, pos, null, busy, new Vector2Int(i, e));
                 id++;
                 grid[i, e] = n;

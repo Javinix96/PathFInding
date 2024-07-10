@@ -1,14 +1,13 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using UnityEngine;
 
 public class World
 {
     private Node[,] grid;
-
-    private Node[,] Grid { get => grid; }
 
     private List<Node> openList;
     private List<Node> closedList;
@@ -22,27 +21,56 @@ public class World
     private int sizeW = 0;
     private int sizeH = 0;
     private bool found = false;
+    private int size;
+    private float sizeNode;
+    private LayerMask noHit;
 
-    public void InitGrid(Vector2Int posI, Vector2Int posF, Node[,] gridP)
+    public float SizeNode { get =>sizeNode; }
+
+    public Node[,] Grid { get => grid; }
+
+    public World()
     {
         path = new List<Node>();
+
+    }
+
+    public void InitGrid(Vector2Int posI, Vector2Int posF, int s, float sN,LayerMask nH)
+    {
         openList = new List<Node>();
         closedList = new List<Node>();
         PosI = posI;
         PosF = posF;
-        grid = gridP;
-        sizeW = grid.GetUpperBound(0);
-        sizeH = grid.GetUpperBound(1);
-        closedList.Add(grid[PosI.x, PosI.y]);
         found = false;
         actual = PosI;
+        size = s;
+        grid = new Node[size,size];
+        sizeNode = sN;
+        noHit = nH;
+        StartGrid();
+        closedList.Add(grid[PosI.x, PosI.y]);
+        sizeW = grid.GetUpperBound(0);
+        sizeH = grid.GetUpperBound(1);
     }
 
-    public IEnumerator GeneratePath(Vector2Int posI, Vector2Int posF, Node[,] gridP, Action<List<Node>, List<Node>> callback, Action<List<Node>> callback2)
+    private void StartGrid()
     {
+        int id = 0;
+        for (int i = 0; i < size; i++)
+        {
+            for (int e = 0; e < size; e++)
+            {
+                Vector3 pos = new Vector3(i * sizeNode, 1, e * sizeNode);
+                int busy = Physics.CheckSphere(pos, sizeNode - 0.3f, noHit) ? 1 : 0;
+                Node n = new Node(id, 0, 0, 0, pos, null, busy, new Vector2Int(i, e));
+                id++;
+                grid[i, e] = n;
+            }
+        }
+    }
 
-        InitGrid(posI, posF, gridP);
-
+    public bool CanBuild()
+    {
         while (!found)
         {
             for (int x = -1; x <= 1; x++)
@@ -69,9 +97,11 @@ public class World
 
                     if (openList.Contains(newNode))
                     {
-                        if (actual.x == 34 && actual.y == 1)
+                        if (openList.Count <= 0)
                         {
-                            Debug.Log("llego");
+                            found = true;
+                            Debug.Log("No hay path camino bloqueado");
+                            return false;
                         }
                         if (AllCalculated(openList, grid[actual.x, actual.y]))
                         {
@@ -94,8 +124,6 @@ public class World
                         found = true;
                         break;
                     }
-                    // callback(openList, closedList);
-                    yield return new WaitForSeconds(0.0f);
                 }
             }
 
@@ -103,8 +131,7 @@ public class World
             {
                 found = true;
                 Debug.Log("No hay path camino bloqueado");
-                callback(openList, closedList);
-                break;
+                return false;
             }
 
             if (AllCalculated(openList, grid[actual.x, actual.y]))
@@ -122,14 +149,93 @@ public class World
                 openList.Remove(minor);
                 actual = minorPos2;
             }
+        }
 
+        return true;
+    }
 
-            yield return new WaitForSeconds(0.01f);
+    public List<Node> GetPath(Action<List<Node>, List<Node>> callback = null)
+    {
+        while (!found)
+        {
+            for (int x = -1; x <= 1; x++)
+            {
+                for (int y = -1; y <= 1; y++)
+                {
+                    Vector2Int pos = new Vector2Int(actual.x + x, actual.y + y);
+
+                    if (pos.x < 0 || pos.y < 0)
+                        continue;
+
+                    if (pos.x > sizeW || pos.y > sizeH)
+                        continue;
+
+                    if (x == 0 && y == 0)
+                        continue;
+
+                    if (grid[pos.x, pos.y].Busy == 1)
+                        continue;
+
+                    Node newNode = grid[pos.x, pos.y];
+
+                    if (closedList.Contains(newNode))
+                        continue;
+
+                    if (openList.Contains(newNode))
+                    {
+                        if (AllCalculated(openList, grid[actual.x, actual.y]))
+                        {
+                            actual = GetLow(grid[actual.x, actual.y]).PosA;
+                            closedList.Add(GetLow(grid[actual.x, actual.y]));
+                            openList.Remove(GetLow(grid[actual.x, actual.y]));
+                            x = -1;
+                            y = -1;
+                        }
+                        continue;
+                    }
+
+                    newNode = CalculateNode(x, y, newNode);
+
+                    openList.Add(newNode);
+
+                    if (openList.Contains(grid[PosF.x, PosF.y]))
+                    {
+                        closedList.Add(grid[PosF.x, PosF.y]);
+                        found = true;
+                        break;
+                    }
+                }
+            }
+
+            if (openList.Count <= 0)
+            {
+                found = true;
+                Debug.Log("No hay path camino bloqueado");
+                callback(openList, closedList);
+                return new List<Node>();
+            }
+
+            if (AllCalculated(openList, grid[actual.x, actual.y]))
+            {
+                actual = GetLow(grid[actual.x, actual.y]).PosA;
+                closedList.Add(GetLow(grid[actual.x, actual.y]));
+                openList.Remove(GetLow(grid[actual.x, actual.y]));
+            }
+            else
+            {
+
+                Vector2Int minorPos2 = GetMinor2(openList);
+                Node minor = grid[minorPos2.x, minorPos2.y];
+                closedList.Add(minor);
+                openList.Remove(minor);
+                actual = minorPos2;
+            }
         }
 
         if (openList.Count > 0)
         {
             closedList.Reverse();
+            path = new List<Node>();
             path.Add(closedList[0]);
             Node e = closedList[0].Parent;
 
@@ -143,8 +249,9 @@ public class World
 
             callback(openList, closedList);
             path.Reverse();
-            callback2(path);
         }
+
+        return path;
     }
 
 
@@ -294,5 +401,10 @@ public class World
     {
         var s = open.OrderBy(d => d.F).ToList();
         return s[0].PosA;
+    }
+
+    internal void GetPath(Vector2Int posI, Vector2Int posF, Action<List<Node>, List<Node>> getPath1, Action<List<Node>, List<Node>> getPath2)
+    {
+        throw new NotImplementedException();
     }
 }
