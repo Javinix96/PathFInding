@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
 using Color = UnityEngine.Color;
 
@@ -31,6 +33,7 @@ public class CreateTurret : MonoBehaviour
     private void Start()
     {
         world = new World();
+        world.InitGrid(posI, posF, 40, 4, noHit);
     }
 
 
@@ -41,23 +44,36 @@ public class CreateTurret : MonoBehaviour
 
         if (Physics.Raycast(ray, out hit, 3000))
             if (curretnTurret != null)
-                curretnTurret.transform.position = new Vector3(hit.point.x, curretnTurret.transform.localScale.y / 2, hit.point.z);
+                curretnTurret.transform.position = GetCords(hit.point);
 
     }
 
-    private void Update()
+    private Vector3 GetCords(Vector3 hit)
+    {
+        int x = (int)(Math.Round(hit.x / 2) * 2) / 4;
+        int y = (int)(Math.Round(hit.z / 2) * 2) / 4;
+
+        var g = world.GridForPos(40, 4);
+
+        Vector3 pos = new Vector3((g[x, y].Pos.x - 2) + 10, curretnTurret.transform.localScale.y / 2, (g[x, y].Pos.z - 2) + 10);
+
+        return pos;
+    }
+
+    private async void Update()
     {
         CreateRay();
         if (Input.GetKeyDown(KeyCode.E))
+        {
+
             curretnTurret = Instantiate(turrets[2], Vector3.zero, Quaternion.identity);
+            curretnTurret.GetComponent<BoxCollider>().enabled = false;
+        }
 
         if (Input.GetKeyDown(KeyCode.R))
             if (curretnTurret != null)
                 Destroy(curretnTurret);
 
-
-
-        
 
         if (Input.GetMouseButtonDown(0))
         {
@@ -66,16 +82,20 @@ public class CreateTurret : MonoBehaviour
                 if (world == null)
                     return;
                 path = null;
-                world.InitGrid(posI, posF, 40, 2, noHit);
+                GameObject turret = Instantiate(curretnTurret);
+                turret.GetComponent<BoxCollider>().enabled = true;
+                world.InitGrid(posI, posF, 40, 4, noHit);
                 if (!world.CanBuild())
                 {
-                    world.InitGrid(posI, posF, 40, 2, noHit);
+                    Destroy(turret);
+                    await Task.Delay(100);
+                    world.InitGrid(posI, posF, 40, 4, noHit);
                     path = world.GetPath(GetPath);
+
                     return;
                 }
 
                 path = world.GetPath(GetPath);
-                Instantiate(curretnTurret);
             }
         }
 
@@ -100,16 +120,16 @@ public class CreateTurret : MonoBehaviour
                 if (path == null)
                     return;
 
-                Vector3 n = new Vector3(i * 2, 0, e * 2);
+                Vector3 n = new Vector3(i * 4, 0, e * 4);
 
-                if (world.Grid[i,e].Busy == 1)
+                if (world.Grid[i, e].Busy == 1)
                 {
                     Gizmos.color = Color.red;
                     Gizmos.DrawCube(n, new Vector3(world.SizeNode, world.SizeNode, world.SizeNode));
                     continue;
                 }
 
-                if (path.Contains(world.Grid[i,e]))
+                if (path.Contains(world.Grid[i, e]))
                 {
                     Gizmos.color = Color.green;
                     Gizmos.DrawCube(n, new Vector3(world.SizeNode, world.SizeNode, world.SizeNode));

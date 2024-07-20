@@ -25,8 +25,7 @@ public class World
     private float sizeNode;
     private LayerMask noHit;
 
-    public float SizeNode { get =>sizeNode; }
-
+    public float SizeNode { get => sizeNode; }
     public Node[,] Grid { get => grid; }
 
     public World()
@@ -35,7 +34,7 @@ public class World
 
     }
 
-    public void InitGrid(Vector2Int posI, Vector2Int posF, int s, float sN,LayerMask nH)
+    public void InitGrid(Vector2Int posI, Vector2Int posF, int s, float sN, LayerMask nH)
     {
         openList = new List<Node>();
         closedList = new List<Node>();
@@ -44,7 +43,7 @@ public class World
         found = false;
         actual = PosI;
         size = s;
-        grid = new Node[size,size];
+        grid = new Node[size, size];
         sizeNode = sN;
         noHit = nH;
         StartGrid();
@@ -52,6 +51,43 @@ public class World
         sizeW = grid.GetUpperBound(0);
         sizeH = grid.GetUpperBound(1);
     }
+
+
+    public void InitGrid(int s, float sN)
+    {
+        size = s;
+        grid = new Node[size, size];
+        sizeNode = sN;
+        StartGrid();
+    }
+
+    public Node[,] GridForPos(int s, float sN)
+    {
+        int id = 0;
+        Node[,] tGrid = new Node[s, s];
+        for (int i = 0; i < s; i++)
+        {
+            for (int e = 0; e < s; e++)
+            {
+                Vector3 pos = new Vector3(i * sN, 1, e * sN);
+                Node n = new Node(id, 0, 0, 0, pos, null, 0, new Vector2Int(i, e));
+                id++;
+                tGrid[i, e] = n;
+            }
+        }
+
+        return tGrid;
+    }
+
+    // public bool CanBuildTurret()
+    // {
+    //     if (grid == null)
+    //         return true;
+
+
+    // }
+
+
 
     private void StartGrid()
     {
@@ -61,7 +97,7 @@ public class World
             for (int e = 0; e < size; e++)
             {
                 Vector3 pos = new Vector3(i * sizeNode, 1, e * sizeNode);
-                int busy = Physics.CheckSphere(pos, sizeNode - 0.3f, noHit) ? 1 : 0;
+                int busy = Physics.CheckSphere(pos, sizeNode - 2, noHit) ? 1 : 0;
                 Node n = new Node(id, 0, 0, 0, pos, null, busy, new Vector2Int(i, e));
                 id++;
                 grid[i, e] = n;
@@ -212,7 +248,7 @@ public class World
                 found = true;
                 Debug.Log("No hay path camino bloqueado");
                 callback(openList, closedList);
-                return new List<Node>();
+                return closedList;
             }
 
             if (AllCalculated(openList, grid[actual.x, actual.y]))
