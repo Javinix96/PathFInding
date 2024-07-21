@@ -63,6 +63,7 @@ public class World
 
     public Node[,] GridForPos(int s, float sN)
     {
+
         int id = 0;
         Node[,] tGrid = new Node[s, s];
         for (int i = 0; i < s; i++)
@@ -72,22 +73,31 @@ public class World
                 Vector3 pos = new Vector3(i * sN, 1, e * sN);
                 Node n = new Node(id, 0, 0, 0, pos, null, 0, new Vector2Int(i, e));
                 id++;
-                tGrid[i, e] = n;
+                Grid[i, e] = n;
             }
         }
 
         return tGrid;
     }
 
-    // public bool CanBuildTurret()
-    // {
-    //     if (grid == null)
-    //         return true;
+    public bool CanBuildTurret(Vector2Int pos, float sizeX, float sizeY)
+    {
+        if (grid == null)
+            return true;
 
+        int cX = (int)MathF.Ceiling(sizeX / sizeNode);
+        int cY = (int)MathF.Ceiling(sizeY / sizeNode);
 
-    // }
+        int posIX = pos.x;
+        int posIY = pos.y;
 
+        for (int x = posIX; x < (posIX + cX); x++)
+            for (int y = posIY; y < (posIY + cY); y++)
+                if (grid[x, y].Busy == 1)
+                    return false;
+        return true;
 
+    }
 
     private void StartGrid()
     {
@@ -97,7 +107,7 @@ public class World
             for (int e = 0; e < size; e++)
             {
                 Vector3 pos = new Vector3(i * sizeNode, 1, e * sizeNode);
-                int busy = Physics.CheckSphere(pos, sizeNode - 2, noHit) ? 1 : 0;
+                int busy = Physics.CheckSphere(pos, sizeNode - 1.5f, noHit) ? 1 : 0;
                 Node n = new Node(id, 0, 0, 0, pos, null, busy, new Vector2Int(i, e));
                 id++;
                 grid[i, e] = n;

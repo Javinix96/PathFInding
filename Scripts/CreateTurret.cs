@@ -34,6 +34,9 @@ public class CreateTurret : MonoBehaviour
     {
         world = new World();
         world.InitGrid(posI, posF, 40, 4, noHit);
+
+        print((int)MathF.Ceiling(2.4f));
+
     }
 
 
@@ -50,12 +53,19 @@ public class CreateTurret : MonoBehaviour
 
     private Vector3 GetCords(Vector3 hit)
     {
-        int x = (int)(Math.Round(hit.x / 2) * 2) / 4;
-        int y = (int)(Math.Round(hit.z / 2) * 2) / 4;
+        int x = (int)(hit.x / 4);
+        int y = (int)(hit.z / 4); 
+        Vector3 pos = Vector3.zero;
 
-        var g = world.GridForPos(40, 4);
 
-        Vector3 pos = new Vector3((g[x, y].Pos.x - 2) + 10, curretnTurret.transform.localScale.y / 2, (g[x, y].Pos.z - 2) + 10);
+        if (!world.CanBuildTurret(new Vector2Int(x, y), 10, 10))
+            return pos;
+
+        if (world.Grid == null)
+            return pos;
+
+  
+        pos = new Vector3((world.Grid[x, y].Pos.x - 2) + 6, curretnTurret.transform.localScale.y / 2, (world.Grid[x, y].Pos.z - 2) + 6);
 
         return pos;
     }
@@ -82,6 +92,7 @@ public class CreateTurret : MonoBehaviour
                 if (world == null)
                     return;
                 path = null;
+
                 GameObject turret = Instantiate(curretnTurret);
                 turret.GetComponent<BoxCollider>().enabled = true;
                 world.InitGrid(posI, posF, 40, 4, noHit);
