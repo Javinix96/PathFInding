@@ -19,14 +19,7 @@ public class CreateTurret : MonoBehaviour
     private List<Node> path;
 
     private GameObject curretnTurret;
-
-
     private bool canBuild;
-
-    private void Start()
-    {
-
-    }
 
     void CreateRay()
     {
@@ -44,8 +37,19 @@ public class CreateTurret : MonoBehaviour
         int x = (int)(hit.x / grid.World.SizeNode);
         int y = (int)(hit.z / grid.World.SizeNode);
 
-        canBuild = grid.World.CanBuildTurret(new Vector2Int(x, y), 10, 10);
+        Vector2Int pos = new Vector2Int(x, y);
 
+        canBuild = grid.World.CanBuildTurret(pos, 10, 10);
+
+        var nodes = grid.GetNodesGrid(pos, 10, 10);
+
+        nodes.ForEach(n =>
+        {
+            if (n.Busy == 1)
+                n.SetColor(new Color(255 / 255, 0, 25 / 255), true);
+            else
+                n.SetColor(new Color(117 / 255, 255 / 255, 0), true);
+        });
         if (grid.World.Grid == null)
         {
             canBuild = false;
@@ -89,17 +93,20 @@ public class CreateTurret : MonoBehaviour
         path = null;
         GameObject turret = Instantiate(curretnTurret);
         turret.GetComponent<BoxCollider>().enabled = true;
+        MeshRenderer mr = turret.GetComponent<MeshRenderer>();
+        Color tc = mr.material.color;
+        tc.a = 1;
+        if (mr != null)
+            mr.material.color = tc;
         grid.World.InitGrid();
         if (!grid.World.CanBuild())
         {
-            path = grid.World.GetPath(GetPath);
             Destroy(turret);
             await Task.Delay(100);
             grid.World.InitGrid();
             path = grid.World.GetPath(GetPath);
             return;
         }
-
         path = grid.World.GetPath(GetPath);
     }
 

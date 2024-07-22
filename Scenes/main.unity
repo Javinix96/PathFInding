@@ -240,11 +240,7 @@ MonoBehaviour:
   - {fileID: 2436702264684861215, guid: 6b35e8aa97ea7a742906aaa923af5d35, type: 3}
   - {fileID: 7586059478637801338, guid: 2caf8b05af2e0724687ea7a348aa6f74, type: 3}
   - {fileID: 8566152000345890236, guid: eeaa10be16b00c14cb984d13e14a0cfe, type: 3}
-  posI: {x: 39, y: 1}
-  posF: {x: 35, y: 36}
-  noHit:
-    serializedVersion: 2
-    m_Bits: 16
+  grid: {fileID: 1959367583}
 --- !u!1 &705507993
 GameObject:
   m_ObjectHideFlags: 0
@@ -658,7 +654,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &1959367583
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -671,15 +667,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d0c56a27fc48b4dbd9f5341ee000e68f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  gridNodes: []
+  gridCube: {fileID: 6691448243198234949, guid: 207c360fb61fd7247a7f77cbfd007018, type: 3}
   posI: {x: 39, y: 1}
   posF: {x: 35, y: 36}
-  sizeNode: 2
-  temp: []
-  arrow: {fileID: 2218056844543966595, guid: 5fa549eec2a2440b6a4b54fb2769be3a, type: 3}
-  enemy: {fileID: 2701067546294615810, guid: b5a611a7fbdec426ba8f13e7cdd1a33a, type: 3}
   noHit:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 16
   size: 40
 --- !u!4 &1959367584
 Transform:

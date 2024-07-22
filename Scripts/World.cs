@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class World
@@ -59,6 +60,7 @@ public class World
         openList = new List<Node>();
         closedList = new List<Node>();
         found = false;
+        actual = PosI;
         grid = new Node[size, size];
         StartGrid();
         closedList.Add(grid[PosI.x, PosI.y]);
@@ -92,6 +94,7 @@ public class World
         return tGrid;
     }
 
+    //size X and Y refers to turret size
     public bool CanBuildTurret(Vector2Int pos, float sizeX, float sizeY)
     {
         if (grid == null)
@@ -108,6 +111,25 @@ public class World
                 if (grid[x, y].Busy == 1)
                     return false;
         return true;
+
+    }
+
+    public List<Node> GetNodesToBuild(Vector2Int pos, float sizeX, float sizeY)
+    {
+        if (grid == null)
+            return null;
+
+        List<Node> nodes = new List<Node>();
+        int cX = (int)MathF.Ceiling(sizeX / sizeNode);
+        int cY = (int)MathF.Ceiling(sizeY / sizeNode);
+
+        int posIX = pos.x;
+        int posIY = pos.y;
+
+        for (int x = posIX; x < (posIX + cX); x++)
+            for (int y = posIY; y < (posIY + cY); y++)
+                nodes.Add(grid[x, y]);
+        return nodes;
 
     }
 
@@ -330,7 +352,6 @@ public class World
         return node;
     }
 
-
     private bool AllCalculated(List<Node> open, Node newN)
     {
         bool ans = true;
@@ -361,7 +382,6 @@ public class World
                     ans = false;
                 else
                     ans = true;
-
             }
         }
         return ans;
@@ -432,10 +452,7 @@ public class World
         return grid[GetMinor2(openList).x, GetMinor2(openList).y];
     }
 
-    private int GetDistance(Vector2Int a, Vector2Int b)
-    {
-        return Math.Abs((b.x - a.x)) + Math.Abs((b.y - a.y));
-    }
+    private int GetDistance(Vector2Int a, Vector2Int b) => Math.Abs((b.x - a.x)) + Math.Abs((b.y - a.y));
 
     private Vector2Int GetMinor(List<Node> open)
     {
@@ -449,9 +466,7 @@ public class World
                 min = open[i].F;
                 n = open[i].PosA;
             }
-
         }
-
         return n;
     }
 
@@ -460,9 +475,16 @@ public class World
         var s = open.OrderBy(d => d.F).ToList();
         return s[0].PosA;
     }
+}
 
-    internal void GetPath(Vector2Int posI, Vector2Int posF, Action<List<Node>, List<Node>> getPath1, Action<List<Node>, List<Node>> getPath2)
+public static class ExtensionNode
+{
+    public static List<T> ArrToList<T>(this T[,] rer, T[,] arr)
     {
-        throw new NotImplementedException();
+        List<T> nodes = new List<T>();
+
+        foreach (T n in arr)
+            nodes.Add(n);
+        return nodes;
     }
 }
