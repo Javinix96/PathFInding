@@ -15,8 +15,8 @@ public class World
     private List<Node> path;
 
     private Vector2Int actual;
-    private Vector2Int PosI;
-    private Vector2Int PosF;
+    private Vector2Int posI;
+    private Vector2Int posF;
 
     private int sizeW = 0;
     private int sizeH = 0;
@@ -27,6 +27,8 @@ public class World
 
     public float SizeNode { get => sizeNode; }
     public Node[,] Grid { get => grid; }
+    public Vector2Int PosI { get => posI; }
+    public Vector2Int PosF { get => posF; }
 
     public World()
     {
@@ -34,12 +36,12 @@ public class World
 
     }
 
-    public void InitGrid(Vector2Int posI, Vector2Int posF, int s, float sN, LayerMask nH)
+    public void InitGrid(Vector2Int _posI, Vector2Int _posF, int s, float sN, LayerMask nH)
     {
         openList = new List<Node>();
         closedList = new List<Node>();
-        PosI = posI;
-        PosF = posF;
+        posI = _posI;
+        posF = _posF;
         found = false;
         actual = PosI;
         size = s;
@@ -50,6 +52,16 @@ public class World
         closedList.Add(grid[PosI.x, PosI.y]);
         sizeW = grid.GetUpperBound(0);
         sizeH = grid.GetUpperBound(1);
+    }
+
+    public void InitGrid()
+    {
+        openList = new List<Node>();
+        closedList = new List<Node>();
+        found = false;
+        grid = new Node[size, size];
+        StartGrid();
+        closedList.Add(grid[PosI.x, PosI.y]);
     }
 
 

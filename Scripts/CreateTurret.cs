@@ -13,32 +13,20 @@ public class CreateTurret : MonoBehaviour
     [SerializeField]
     private GameObject[] turrets;
     [SerializeField]
-    private Vector2Int posI;
-    [SerializeField]
-    private Vector2Int posF;
-    [SerializeField]
-    private LayerMask noHit;
-
+    private GenGrid grid;
     private List<Node> openList;
     private List<Node> closedList;
     private List<Node> path;
 
     private GameObject curretnTurret;
 
-    private World world;
 
-
-    public World World { get => world; }
+    private bool canBuild;
 
     private void Start()
     {
-        world = new World();
-        world.InitGrid(posI, posF, 40, 4, noHit);
-
-        print((int)MathF.Ceiling(2.4f));
 
     }
-
 
     void CreateRay()
     {
@@ -53,29 +41,25 @@ public class CreateTurret : MonoBehaviour
 
     private Vector3 GetCords(Vector3 hit)
     {
-        int x = (int)(hit.x / 4);
-        int y = (int)(hit.z / 4); 
-        Vector3 pos = Vector3.zero;
+        int x = (int)(hit.x / grid.World.SizeNode);
+        int y = (int)(hit.z / grid.World.SizeNode);
 
+        canBuild = grid.World.CanBuildTurret(new Vector2Int(x, y), 10, 10);
 
-        if (!world.CanBuildTurret(new Vector2Int(x, y), 10, 10))
-            return pos;
+        if (grid.World.Grid == null)
+        {
+            canBuild = false;
+            return Vector3.zero;
+        }
 
-        if (world.Grid == null)
-            return pos;
-
-  
-        pos = new Vector3((world.Grid[x, y].Pos.x - 2) + 6, curretnTurret.transform.localScale.y / 2, (world.Grid[x, y].Pos.z - 2) + 6);
-
-        return pos;
+        return new Vector3((grid.World.Grid[x, y].Pos.x - 2) + 6, curretnTurret.transform.localScale.y / 2, (grid.World.Grid[x, y].Pos.z - 2) + 6);
     }
 
-    private async void Update()
+    private void Update()
     {
         CreateRay();
         if (Input.GetKeyDown(KeyCode.E))
         {
-
             curretnTurret = Instantiate(turrets[2], Vector3.zero, Quaternion.identity);
             curretnTurret.GetComponent<BoxCollider>().enabled = false;
         }
@@ -89,27 +73,34 @@ public class CreateTurret : MonoBehaviour
         {
             if (curretnTurret != null)
             {
-                if (world == null)
+                if (grid.World == null)
                     return;
-                path = null;
 
-                GameObject turret = Instantiate(curretnTurret);
-                turret.GetComponent<BoxCollider>().enabled = true;
-                world.InitGrid(posI, posF, 40, 4, noHit);
-                if (!world.CanBuild())
-                {
-                    Destroy(turret);
-                    await Task.Delay(100);
-                    world.InitGrid(posI, posF, 40, 4, noHit);
-                    path = world.GetPath(GetPath);
-
+                if (!canBuild)
                     return;
-                }
 
-                path = world.GetPath(GetPath);
+                CalculatePath();
             }
         }
+    }
 
+    private async void CalculatePath()
+    {
+        path = null;
+        GameObject turret = Instantiate(curretnTurret);
+        turret.GetComponent<BoxCollider>().enabled = true;
+        grid.World.InitGrid();
+        if (!grid.World.CanBuild())
+        {
+            path = grid.World.GetPath(GetPath);
+            Destroy(turret);
+            await Task.Delay(100);
+            grid.World.InitGrid();
+            path = grid.World.GetPath(GetPath);
+            return;
+        }
+
+        path = grid.World.GetPath(GetPath);
     }
 
     private void GetPath(List<Node> _open, List<Node> _closed)
@@ -125,7 +116,7 @@ public class CreateTurret : MonoBehaviour
         {
             for (int e = 0; e < 40; e++)
             {
-                if (world == null)
+                if (grid.World == null)
                     continue;
 
                 if (path == null)
@@ -133,36 +124,36 @@ public class CreateTurret : MonoBehaviour
 
                 Vector3 n = new Vector3(i * 4, 0, e * 4);
 
-                if (world.Grid[i, e].Busy == 1)
+                if (grid.World.Grid[i, e].Busy == 1)
                 {
                     Gizmos.color = Color.red;
-                    Gizmos.DrawCube(n, new Vector3(world.SizeNode, world.SizeNode, world.SizeNode));
+                    Gizmos.DrawCube(n, new Vector3(grid.World.SizeNode, grid.World.SizeNode, grid.World.SizeNode));
                     continue;
                 }
 
-                if (path.Contains(world.Grid[i, e]))
+                if (path.Contains(grid.World.Grid[i, e]))
                 {
                     Gizmos.color = Color.green;
-                    Gizmos.DrawCube(n, new Vector3(world.SizeNode, world.SizeNode, world.SizeNode));
+                    Gizmos.DrawCube(n, new Vector3(grid.World.SizeNode, grid.World.SizeNode, grid.World.SizeNode));
                     continue;
                 }
                 Gizmos.color = Color.gray;
-                Gizmos.DrawCube(n, new Vector3(world.SizeNode, world.SizeNode, world.SizeNode));
+                Gizmos.DrawCube(n, new Vector3(grid.World.SizeNode, grid.World.SizeNode, grid.World.SizeNode));
 
 
 
 
-                if (i == posI.x && e == posI.y)
+                if (i == grid.World.PosI.x && e == grid.World.PosI.y)
                 {
                     Gizmos.color = Color.blue;
-                    Gizmos.DrawCube(n, new Vector3(world.SizeNode, world.SizeNode, world.SizeNode));
+                    Gizmos.DrawCube(n, new Vector3(grid.World.SizeNode, grid.World.SizeNode, grid.World.SizeNode));
                     continue;
                 }
 
-                if (i == posF.x && e == posF.y)
+                if (i == grid.World.PosF.x && e == grid.World.PosF.y)
                 {
                     Gizmos.color = Color.magenta;
-                    Gizmos.DrawCube(n, new Vector3(world.SizeNode, world.SizeNode, world.SizeNode));
+                    Gizmos.DrawCube(n, new Vector3(grid.World.SizeNode, grid.World.SizeNode, grid.World.SizeNode));
                     continue;
                 }
             }
