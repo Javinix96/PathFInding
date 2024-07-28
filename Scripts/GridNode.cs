@@ -23,6 +23,13 @@ public class GridNode : MonoBehaviour
         mh.material.color = color;
     }
 
+    public void SetColor(Color color, float opacity)
+    {
+        color.a = opacity;
+        mh.material.color = color;
+        this.gameObject.SetActive(true);
+    }
+
     public void SetColor(Color color, bool active)
     {
         color.a = 0.5f;

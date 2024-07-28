@@ -34,7 +34,6 @@ public class World
     public World()
     {
         path = new List<Node>();
-
     }
 
     public void InitGrid(Vector2Int _posI, Vector2Int _posF, int s, float sN, LayerMask nH)
@@ -95,7 +94,7 @@ public class World
     }
 
     //size X and Y refers to turret size
-    public bool CanBuildTurret(Vector2Int pos, float sizeX, float sizeY)
+    public bool CanBuildTurret(Vector2Int pos, float sizeX, float sizeY, int offset = 0)
     {
         if (grid == null)
             return true;
@@ -106,31 +105,62 @@ public class World
         int posIX = pos.x;
         int posIY = pos.y;
 
-        for (int x = posIX; x < (posIX + cX); x++)
-            for (int y = posIY; y < (posIY + cY); y++)
+        for (int x = posIX - offset; x < (posIX + cX) + offset; x++)
+        {
+            for (int y = posIY - offset; y < (posIY + cY) + offset; y++)
+            {
+                if (x < 0 || y < 0)
+                    continue;
+
+                if (x > sizeW || y > sizeH)
+                    continue;
+
                 if (grid[x, y].Busy == 1)
                     return false;
+            }
+        }
         return true;
-
     }
 
-    public List<Node> GetNodesToBuild(Vector2Int pos, float sizeX, float sizeY)
+    public List<Node> GetNodesToBuild(Vector2Int pos, float sizeX, float sizeY, int offset = 0)
     {
         if (grid == null)
             return null;
 
         List<Node> nodes = new List<Node>();
+
         int cX = (int)MathF.Ceiling(sizeX / sizeNode);
         int cY = (int)MathF.Ceiling(sizeY / sizeNode);
 
         int posIX = pos.x;
         int posIY = pos.y;
 
-        for (int x = posIX; x < (posIX + cX); x++)
-            for (int y = posIY; y < (posIY + cY); y++)
+        for (int x = posIX - offset; x < (posIX + cX) + offset; x++)
+        {
+            for (int y = posIY - offset; y < (posIY + cY) + offset; y++)
+            {
+                if (x < 0 || y < 0)
+                    continue;
+
+                if (x > sizeW || y > sizeH)
+                    continue;
+
                 nodes.Add(grid[x, y]);
+            }
+        }
         return nodes;
 
+    }
+
+    public bool isOnBounds(int x, int y)
+    {
+        if (x < 0 || y < 0)
+            return false;
+
+        if (x >= sizeW || y >= sizeH)
+            return false;
+
+        return true;
     }
 
     private void StartGrid()
@@ -234,7 +264,7 @@ public class World
         return true;
     }
 
-    public List<Node> GetPath(Action<List<Node>, List<Node>> callback = null)
+    public List<Node> GetPath()
     {
         while (!found)
         {
@@ -291,25 +321,24 @@ public class World
             {
                 found = true;
                 Debug.Log("No hay path camino bloqueado");
-                callback(openList, closedList);
                 return closedList;
             }
 
-            if (AllCalculated(openList, grid[actual.x, actual.y]))
-            {
-                actual = GetLow(grid[actual.x, actual.y]).PosA;
-                closedList.Add(GetLow(grid[actual.x, actual.y]));
-                openList.Remove(GetLow(grid[actual.x, actual.y]));
-            }
-            else
-            {
+            // if (AllCalculated(openList, grid[actual.x, actual.y]))
+            // {
+            //     actual = GetLow(grid[actual.x, actual.y]).PosA;
+            //     closedList.Add(GetLow(grid[actual.x, actual.y]));
+            //     openList.Remove(GetLow(grid[actual.x, actual.y]));
+            // }
+            // else
+            // {
 
-                Vector2Int minorPos2 = GetMinor2(openList);
-                Node minor = grid[minorPos2.x, minorPos2.y];
-                closedList.Add(minor);
-                openList.Remove(minor);
-                actual = minorPos2;
-            }
+            Vector2Int minorPos2 = GetMinor2(openList);
+            Node minor = grid[minorPos2.x, minorPos2.y];
+            closedList.Add(minor);
+            openList.Remove(minor);
+            actual = minorPos2;
+            // }
         }
 
         if (openList.Count > 0)
@@ -327,7 +356,6 @@ public class World
 
             path.Add(grid[PosI.x, PosI.y]);
 
-            callback(openList, closedList);
             path.Reverse();
         }
 
@@ -479,7 +507,7 @@ public class World
 
 public static class ExtensionNode
 {
-    public static List<T> ArrToList<T>(this T[,] rer, T[,] arr)
+    public static List<T> ArrToList<T>(this T[,] arrTo, T[,] arr)
     {
         List<T> nodes = new List<T>();
 
