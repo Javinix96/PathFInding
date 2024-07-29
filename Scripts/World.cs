@@ -179,7 +179,7 @@ public class World
         }
     }
 
-    public bool CanBuild()
+    public bool CanBuild(bool ignoredSlash = false)
     {
         while (!found)
         {
@@ -197,6 +197,11 @@ public class World
 
                     if (x == 0 && y == 0)
                         continue;
+
+                    if (ignoredSlash)
+                        if (Math.Abs(x) == 1 && Math.Abs(y) == 1)
+                            continue;
+
                     if (grid[pos.x, pos.y].Busy == 1)
                         continue;
 
@@ -244,27 +249,27 @@ public class World
                 return false;
             }
 
-            if (AllCalculated(openList, grid[actual.x, actual.y]))
-            {
-                actual = GetLow(grid[actual.x, actual.y]).PosA;
-                closedList.Add(GetLow(grid[actual.x, actual.y]));
-                openList.Remove(GetLow(grid[actual.x, actual.y]));
-            }
-            else
-            {
+            // if (AllCalculated(openList, grid[actual.x, actual.y]))
+            // {
+            //     actual = GetLow(grid[actual.x, actual.y]).PosA;
+            //     closedList.Add(GetLow(grid[actual.x, actual.y]));
+            //     openList.Remove(GetLow(grid[actual.x, actual.y]));
+            // }
+            // else
+            // {
 
-                Vector2Int minorPos2 = GetMinor2(openList);
-                Node minor = grid[minorPos2.x, minorPos2.y];
-                closedList.Add(minor);
-                openList.Remove(minor);
-                actual = minorPos2;
-            }
+            Vector2Int minorPos2 = GetMinor2(openList);
+            Node minor = grid[minorPos2.x, minorPos2.y];
+            closedList.Add(minor);
+            openList.Remove(minor);
+            actual = minorPos2;
+            // }
         }
 
         return true;
     }
 
-    public List<Node> GetPath()
+    public List<Node> GetPath(bool ignoredSlash = false)
     {
         while (!found)
         {
@@ -282,6 +287,10 @@ public class World
 
                     if (x == 0 && y == 0)
                         continue;
+
+                    if (ignoredSlash)
+                        if (Math.Abs(x) == 1 && Math.Abs(y) == 1)
+                            continue;
 
                     if (grid[pos.x, pos.y].Busy == 1)
                         continue;

@@ -36,7 +36,7 @@ public class GenGrid : MonoBehaviour
         world.InitGrid(posI, posF, size, sizeNode, noHit);
         gridNodes = new List<GridNode>();
         CreateNode();
-        WatchPath(World.GetPath());
+        WatchPath(World.GetPath(true));
     }
 
     public void WatchPath(List<Node> path)
@@ -45,7 +45,7 @@ public class GenGrid : MonoBehaviour
         {
             GridNode no = gridNodes.Find(gn => gn.Id == n.ID);
             if (no != null)
-                no.SetColor(new Color(0, 81 / 255, 188 / 255), 1);
+                no.SetColor(new Color(0, (float)3 / 255, 1, 1), true);
         });
     }
 
@@ -69,12 +69,12 @@ public class GenGrid : MonoBehaviour
             {
                 var ng = ph.Find(n => n.ID == no.Id);
                 if (ng == null)
-                    no.SetColor(new Color(216 / 255, 216 / 255, 216 / 255), true);
+                    no.SetColor(new Color((float)216 / 255, (float)216 / 255, (float)216 / 255, 1), false);
                 else
-                    no.SetColor(new Color(0, 88 / 255, 188 / 255), 1);
+                    no.SetColor(new Color(0, (float)88 / 255, (float)188 / 255, 1), true);
             }
             else
-                no.SetColor(new Color(216 / 255, 216 / 255, 216 / 255), false);
+                no.SetColor(new Color((float)216 / 255, (float)216 / 255, (float)216 / 255, 1), false);
         });
         nodes.ForEach(n =>
         {
@@ -93,7 +93,7 @@ public class GenGrid : MonoBehaviour
         var gn = node.AddComponent<GridNode>();
         gn.Init();
         gridNodes.Add(gn);
-        gn.SetColor(new Color(216 / 255, 216 / 255, 216 / 255));
+        gn.SetColor(new Color((float)216 / 255, (float)216 / 255, (float)216 / 255));
         gn.Id = id;
         return node;
     }

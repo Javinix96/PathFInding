@@ -15,8 +15,8 @@ public class CreateTurret : MonoBehaviour
     [SerializeField]
     private GenGrid grid;
     private List<Node> path;
-
     private GameObject currentTurret;
+    private int index;
     private bool canBuild;
 
     void CreateRay()
@@ -50,9 +50,9 @@ public class CreateTurret : MonoBehaviour
         nodes.ForEach(n =>
         {
             if (n.Busy == 1)
-                n.SetColor(new Color(255 / 255, 0, 25 / 255), true);
+                n.SetColor(new Color((float)255 / 255, 0, (float)25 / 255), true);
             else
-                n.SetColor(new Color(117 / 255, 255 / 255, 0), true);
+                n.SetColor(new Color((float)117 / 255, (float)255 / 255, 0), true);
         });
 
         if (grid.World.Grid == null)
@@ -66,17 +66,19 @@ public class CreateTurret : MonoBehaviour
 
     private void Update()
     {
-        CreateRay();
-        if (Input.GetKeyDown(KeyCode.E))
+        if (Input.GetKeyDown(KeyCode.E) && currentTurret == null)
         {
             currentTurret = Instantiate(turrets[2], Vector3.zero, Quaternion.identity);
             currentTurret.GetComponent<BoxCollider>().enabled = false;
             currentTurret.transform.localScale = new Vector3(grid.SizeNode * 2, currentTurret.transform.localScale.y, grid.SizeNode * 2);
         }
 
-        if (Input.GetKeyDown(KeyCode.R))
+        if (Input.GetKeyDown(KeyCode.D))
             if (currentTurret != null)
+            {
                 Destroy(currentTurret);
+                currentTurret = null;
+            }
 
 
         if (Input.GetMouseButtonDown(0))
@@ -92,6 +94,25 @@ public class CreateTurret : MonoBehaviour
                 CalculatePath();
             }
         }
+
+        if (Input.GetKeyDown(KeyCode.R))
+            RotateTurret();
+
+        CreateRay();
+    }
+    void RotateTurret()
+    {
+        if (currentTurret == null)
+            return;
+
+        int sizeX = (int)currentTurret.transform.localScale.x;
+        int sizeZ = (int)currentTurret.transform.localScale.z;
+
+        int temp = sizeX;
+        sizeX = sizeZ;
+        sizeZ = temp;
+
+        currentTurret.transform.localScale = new Vector3(sizeX, currentTurret.transform.localScale.y, sizeZ);
     }
 
     private async void CalculatePath()
@@ -100,16 +121,16 @@ public class CreateTurret : MonoBehaviour
         var turret = SetTurret();
         grid.World.InitGrid();
 
-        if (!grid.World.CanBuild())
+        if (!grid.World.CanBuild(true))
         {
             Destroy(turret);
             await Task.Delay(100);
             grid.World.InitGrid();
-            path = grid.World.GetPath();
+            path = grid.World.GetPath(true);
             grid.WatchPath(path);
             return;
         }
-        path = grid.World.GetPath();
+        path = grid.World.GetPath(true);
         grid.WatchPath(path);
     }
 
